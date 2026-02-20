@@ -27,6 +27,7 @@ VisPaperPlanner is a web application designed to help VIS researchers navigate t
 - **Styling:** Tailwind CSS with a highly customized, non-generic, professional design system (premium feel, subtle animations).
 - **Core Scenarios:** 
   - Related Work Discovery (with BibTeX export)
+  - Interactive 2D Similarity Scatterplot (UMAP/t-SNE projection)
   - Conference Fit Analysis
   - Application Area Identification
   - Success Elements Aggregation
@@ -60,8 +61,9 @@ VisPaperPlanner is a web application designed to help VIS researchers navigate t
 - As an administrator, I want the VisPubData dataset and pre-computed embeddings stored securely in a Supabase PostgreSQL database so the app can query it efficiently.
 - As a developer, I want a CI/CD pipeline configured with GitHub Actions and Vercel so that my code is automatically tested and deployed.
 
-### Epic 2: Core Analysis Dashboard
+### Epic 2: Core Analysis Dashboard & Visualization
 - As a researcher, I want to paste my working abstract into the app so that I can find semantically similar VIS papers.
+- As a researcher, I want to see a 2D interactive scatterplot of the paper corpus, colored by similarity to my query, so I can visually explore clusters of related work.
 - As a researcher, I want to see a visual breakdown of which tracks (VIS, VAST, InfoVis, etc.) my similar papers belong to so I can gauge conference fit.
 - As a researcher, I want to see a word cloud or keyword list aggregated from similar papers to identify my specific application area.
 - As a researcher, I want to see aggregated stats on successful papers in my niche (e.g., methodologies used) to understand how to position my work.
