@@ -1,0 +1,28 @@
+@theme {
+  --color-primary: #0d6efd;
+  --color-secondary: #5b6472;
+  --color-tertiary: #01665e;
+  --color-neutral: #ffffff;
+  --color-surface: #f0f0f0;
+  --color-on-surface: #212529;
+  --color-sand: #dfc27d;
+  --color-error: #b3261e;
+  --font-headline-lg: 'Helvetica';
+  --font-headline-md: 'Helvetica';
+  --font-body-md: 'Helvetica';
+  --font-label-md: 'Helvetica';
+  --text-headline-lg: 40px;
+  --text-headline-md: 24px;
+  --text-body-md: 16px;
+  --text-label-md: 12px;
+  --font-weight-headline-lg: 700;
+  --font-weight-headline-md: 600;
+  --font-weight-body-md: 400;
+  --font-weight-label-md: 400;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 32px;
+}
