@@ -23,7 +23,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npx prettier --check .
+      - run: npm run format:check
       - run: npm run design:lint
 
   unit:
@@ -36,7 +36,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx vitest run --coverage
+      - run: npm run test:coverage
 
   build:
     needs: unit
@@ -53,13 +53,6 @@ jobs:
   e2e:
     needs: build
     runs-on: ubuntu-latest
-    env:
-      # The local Supabase stack started below always uses these demo values (printed by
-      # `npx supabase start`). They are public defaults that only work against this throwaway
-      # local stack, not secrets. Never put a hosted project's keys here; use GitHub secrets.
-      SUPABASE_URL: http://127.0.0.1:54321
-      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -70,14 +63,24 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.121.0
-      # Only the database, PostgREST and the Kong gateway are needed for search.
-      - run: supabase start -x gotrue,realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
-      - run: supabase db reset
+      # `supabase start` applies supabase/migrations/. Search needs the database, PostgREST and the
+      # Kong gateway; auth (gotrue) stays on because without it `supabase status` prints no keys.
+      - run: supabase start -x realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+      # Use this stack's own URL and keys (local throwaway values) instead of hard-coding them.
+      - name: Export local Supabase URL and keys
+        run: |
+          eval "$(supabase status -o env)"
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+          {
+            echo "SUPABASE_URL=$API_URL"
+            echo "SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
       # The integration tests the unit job skips (no database there) run here.
-      - run: npx vitest run
+      - run: npm test
       - run: npm run db:seed -- data/fixture-papers.csv
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test
+      - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
