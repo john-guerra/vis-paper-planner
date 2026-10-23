@@ -15,7 +15,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "prepare": "husky",
-    "design:lint": "npx -y @google/design.md@0.4.0 lint DESIGN.md"
+    "design:lint": "npx -y @google/design.md@0.4.0 lint DESIGN.md",
+    "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed-papers.ts"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx}": [
