@@ -48,15 +48,20 @@ https://supabase.com/pricing before relying on it. If the project is paused, the
    npx supabase db push
    ```
 
-3. Seed production. Copy the project URL and the service-role key from the dashboard
-   (Project Settings, API) and set them **only in your shell**, then unset them:
+3. Seed production with the **full dataset**. Copy the project URL and the service-role key from
+   the dashboard (Project Settings, API) and set them **only in your shell**, then unset them:
 
    ```bash
    export SUPABASE_URL="https://<ref>.supabase.co"
    export SUPABASE_SERVICE_ROLE_KEY="<service role key>"
-   npm run db:seed
+   npm run db:seed -- data/vispubdata-1990-2024.csv
    unset SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY
    ```
+
+   `data/vispubdata-1990-2024.csv` has 3,877 rows (all papers). Plain `npm run db:seed`, with no
+   argument, loads `data/fixture-papers.csv` (200 rows); that small fixture is the default for local
+   development and CI only. Rows without a title, conference or DOI, and repeated DOIs, are skipped;
+   the script prints `{ inserted, skipped }`. Re-running it is safe (it upserts on `doi`).
 
    The service-role key bypasses row-level security. Never put it in Vercel, `.env.local` of a
    deployed app, or the repo.
