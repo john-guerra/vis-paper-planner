@@ -1,9 +1,6 @@
 // @vitest-environment node
-import { readFileSync } from 'node:fs';
-import { parse } from 'csv-parse/sync';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { parsePaperRow, type PaperInsert } from '../../scripts/seed-papers';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { adminClient, hasDb } from '@/test/db';
 import { fakeClient } from '@/test/fake-supabase';
 import { getServerClient } from './supabase';
@@ -65,37 +62,40 @@ describe('searchPapers query and mapping', () => {
 });
 
 describe.skipIf(!hasDb)('searchPapers against local Supabase', () => {
-  let treemapPaper: PaperInsert;
+  // A sentinel row with a DOI no real paper has. Its citation count beats every real
+  // paper, so it ranks first under "most-cited first" whatever else is in the database.
+  // The test touches only this row: it never deletes seeded data.
+  const sentinel = {
+    conference: 'Vis',
+    year: 2024,
+    title: 'Sentinel Treemap Paper for Search Tests',
+    doi: '10.0000/vpp-search-test-treemap',
+    abstract: 'A treemap layout used only by the integration tests.',
+    authors: 'Test Author',
+    keywords: 'treemaps',
+    citation_count: 2_147_483_647, // Postgres int max
+    award: null,
+  };
+  const removeSentinel = () => adminClient().from('papers').delete().eq('doi', sentinel.doi);
 
   beforeAll(async () => {
-    const rows = parse(readFileSync('data/fixture-papers.csv'), { columns: true }) as Record<
-      string,
-      string
-    >[];
-    const papers = rows.map(parsePaperRow).filter((p): p is PaperInsert => p !== null);
-    const mentionsTreemap = (p: PaperInsert) => /treemap/i.test(`${p.title} ${p.abstract}`);
-    treemapPaper = papers.find(mentionsTreemap)!;
-    const others = papers.filter((p) => !mentionsTreemap(p)).slice(0, 2);
+    const { error } = await adminClient().from('papers').upsert(sentinel, { onConflict: 'doi' });
+    expect(error).toBeNull();
+  });
 
-    // Keep exactly one treemap paper so "first" is well defined, then seed 3 fixture rows.
-    const admin = adminClient();
-    const removed = await admin
-      .from('papers')
-      .delete()
-      .textSearch('search', 'treemap', { type: 'websearch', config: 'english' });
-    expect(removed.error).toBeNull();
-    const seeded = await admin
-      .from('papers')
-      .upsert([treemapPaper, ...others], { onConflict: 'doi' });
-    expect(seeded.error).toBeNull();
+  afterAll(async () => {
+    const { error } = await removeSentinel();
+    expect(error).toBeNull();
   });
 
   it('returns the treemap paper first, with year, conference and title', async () => {
     const results = await searchPapers(getServerClient(), 'treemap');
-    expect(results[0].doi).toBe(treemapPaper.doi);
-    expect(results[0].year).toBe(treemapPaper.year);
-    expect(results[0].conference).toBeTruthy();
-    expect(results[0].title).toBeTruthy();
+    expect(results[0]).toMatchObject({
+      doi: sentinel.doi,
+      year: sentinel.year,
+      conference: sentinel.conference,
+      title: sentinel.title,
+    });
   });
 
   it('does not throw on unbalanced quotes and operators', async () => {

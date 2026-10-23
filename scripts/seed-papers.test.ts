@@ -45,38 +45,74 @@ describe('parsePaperRow', () => {
 });
 
 describe.skipIf(!hasDb)('seedPapers against local Supabase', () => {
-  const dois = ['10.0000/vpp-seed-test-1', '10.0000/vpp-seed-test-2'];
-  let csvPath: string;
+  // Sentinel DOIs no real paper has; the tests delete only these rows.
+  const twoDois = ['10.0000/vpp-seed-test-1', '10.0000/vpp-seed-test-2'];
+  const batchDoi = '10.0000/vpp-seed-test-3';
+  const untitledDoi = '10.0000/vpp-seed-test-untitled';
+  const header =
+    'Conference,Year,Title,DOI,Abstract,AuthorNames-Deduped,AuthorKeywords,CitationCount_CrossRef,Award';
+  let twoPapersCsv: string;
+  let messyCsv: string;
 
-  const cleanUp = () => adminClient().from('papers').delete().in('doi', dois);
+  const cleanUp = () =>
+    adminClient()
+      .from('papers')
+      .delete()
+      .in('doi', [...twoDois, batchDoi, untitledDoi]);
 
   beforeAll(async () => {
     await cleanUp();
-    csvPath = join(mkdtempSync(join(tmpdir(), 'vpp-seed-')), 'two-papers.csv');
+    const dir = mkdtempSync(join(tmpdir(), 'vpp-seed-'));
+    twoPapersCsv = join(dir, 'two-papers.csv');
     writeFileSync(
-      csvPath,
+      twoPapersCsv,
       [
-        'Conference,Year,Title,DOI,Abstract,AuthorNames-Deduped,AuthorKeywords,CitationCount_CrossRef,Award',
-        `Vis,2023,Seed Test One,${dois[0]},"First, with a comma.",Ada Lovelace,,3,`,
-        `EuroVis,2022,Seed Test Two,${dois[1]},Second.,Alan Turing,,,BP`,
+        header,
+        `Vis,2023,Seed Test One,${twoDois[0]},"First, with a comma.",Ada Lovelace,,3,`,
+        `EuroVis,2022,Seed Test Two,${twoDois[1]},Second.,Alan Turing,,,BP`,
+      ].join('\n')
+    );
+    // One batch with a repeated DOI and a row without a title.
+    messyCsv = join(dir, 'messy-papers.csv');
+    writeFileSync(
+      messyCsv,
+      [
+        header,
+        `Vis,2021,Seed Test Three,${batchDoi},Kept.,Ada Lovelace,,1,`,
+        `Vis,2021,Seed Test Three Again,${batchDoi},Same DOI.,Ada Lovelace,,1,`,
+        `Vis,2021,,${untitledDoi},No title.,Ada Lovelace,,1,`,
       ].join('\n')
     );
   });
 
   afterAll(async () => {
-    await cleanUp();
+    const { error } = await cleanUp();
+    expect(error).toBeNull();
   });
 
   it('upserts on doi, so seeding the same 2 rows twice leaves 2 rows', async () => {
     const client = adminClient();
-    expect(await seedPapers(client, csvPath)).toStrictEqual({ inserted: 2, skipped: 0 });
-    expect(await seedPapers(client, csvPath)).toStrictEqual({ inserted: 2, skipped: 0 });
+    expect(await seedPapers(client, twoPapersCsv)).toStrictEqual({ inserted: 2, skipped: 0 });
+    expect(await seedPapers(client, twoPapersCsv)).toStrictEqual({ inserted: 2, skipped: 0 });
 
     const { count, error } = await client
       .from('papers')
       .select('id', { count: 'exact', head: true })
-      .in('doi', dois);
+      .in('doi', twoDois);
     expect(error).toBeNull();
     expect(count).toBe(2);
+  });
+
+  it('skips a duplicate DOI and an untitled row in one batch without throwing', async () => {
+    const client = adminClient();
+    await expect(seedPapers(client, messyCsv)).resolves.toStrictEqual({ inserted: 1, skipped: 2 });
+
+    const { data, error } = await client
+      .from('papers')
+      .select('doi, title')
+      .in('doi', [batchDoi, untitledDoi]);
+    expect(error).toBeNull();
+    // The first row for a DOI wins; the untitled row is not stored.
+    expect(data).toStrictEqual([{ doi: batchDoi, title: 'Seed Test Three' }]);
   });
 });
