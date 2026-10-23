@@ -43,3 +43,6 @@ next-env.d.ts
 # playwright
 /playwright-report/
 /test-results/
+
+# env files: the example is committed, real values are not
+!.env.example

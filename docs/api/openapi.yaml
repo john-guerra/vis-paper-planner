@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: VisPaperPlanner API
+  version: 0.1.0
+  description: Keyword search over IEEE VIS papers (VisPubData), backed by Postgres full-text search.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+# Public, read-only endpoint: no authentication.
+security: []
+paths:
+  /api/papers:
+    get:
+      operationId: searchPapers
+      summary: Search papers by keyword
+      description: >-
+        English full-text search over title, abstract and author keywords, using
+        websearch syntax (quoted phrases, `-exclusion`, `or`). Most-cited papers come first.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search terms; trimmed, 1 to 200 characters.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+          example: treemap
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of results.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        '200':
+          description: Matching papers (possibly none).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [results]
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaperSummary'
+        '400':
+          description: Missing, empty or too long `q`, or an invalid `limit`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Enter a search term
+        '500':
+          description: The database is unreachable or misconfigured. The body never includes details.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                additionalProperties: false
+                properties:
+                  error:
+                    type: string
+                    const: Search is unavailable
+components:
+  schemas:
+    PaperSummary:
+      type: object
+      required: [id, title, year, conference, doi, authors, abstractSnippet]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        year:
+          type: [integer, 'null']
+        conference:
+          type: string
+          example: Vis
+        doi:
+          type: [string, 'null']
+        authors:
+          type: string
+          description: Semicolon-separated author names; empty when unknown.
+        abstractSnippet:
+          type: string
+          description: Up to about 240 characters of the abstract, cut at a word, ending in an ellipsis when shortened.
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
