@@ -7,9 +7,12 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    exclude: ['e2e/**', 'node_modules/**'],
     setupFiles: './src/test/setup.ts',
     coverage: {
       provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/test/**', 'src/**/*.test.{ts,tsx}', 'src/app/layout.tsx'],
       thresholds: {
         lines: 70,
         functions: 70,

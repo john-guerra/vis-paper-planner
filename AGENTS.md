@@ -26,6 +26,7 @@
 - `npm run lint`: ESLint
 - `npm run format`: Prettier
 - `npm run design:lint`: validate `DESIGN.md`
+- CI: `.github/workflows/ci.yml` (quality, unit, build, e2e; security in parallel)
 
 ## Context files
 
@@ -36,7 +37,7 @@
 ## Code Quality & Testing Rules
 
 - **Formatting & Linting:** You must adhere to ESLint and Prettier formatting standard rules. Code that does not pass linting cannot be merged.
-- **Code Coverage:** Target `70%` coverage (a goal; it is not yet enforced by CI).
+- **Code Coverage:** CI runs `vitest run --coverage` and fails below `70%` (lines, functions, branches, statements) over `src/` (excluding `src/test`, tests and `layout.tsx`).
 - **Failing test first:** a failing test is committed before the implementation that makes it pass.
 - **Unit Testing:** Write robust unit tests (using Vitest) for logic and individual components.
 - **End-to-End Testing:** Use **Playwright** to map and verify the user journey across the core usage scenarios (Related Work, Conference Fit, etc.).
@@ -63,3 +64,13 @@
 - **Do not feel like you have to please me, I prefer that you say no or contradict me if I'm wrong.**
 - **Feel free to tell me that you don't know something or that you are not confident instead of making up stuff.**
 - **Always base your answers on evidence, unless I tell you otherwise**
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
