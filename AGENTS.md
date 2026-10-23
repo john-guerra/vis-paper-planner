@@ -26,6 +26,10 @@
 - `npm run lint`: ESLint
 - `npm run format`: Prettier
 - `npm run design:lint`: validate `DESIGN.md`
+- `npx supabase start`: start local Supabase (Docker); copy its URL and keys into `.env.local` (see `.env.example`)
+- `npx supabase db reset`: recreate the local database from `supabase/migrations/`
+- `npm run db:seed`: load `data/fixture-papers.csv` (200 rows); `npm run db:seed -- data/vispubdata-1990-2024.csv` loads all papers
+- Database tests are skipped unless `SUPABASE_URL` and the keys are set; they delete every paper matching "treemap" but one, so re-run `npm run db:seed` after them.
 - CI: `.github/workflows/ci.yml` (quality, unit, build, e2e; security in parallel). The audit step checks production dependencies only (`npm audit --omit=dev`) because the remaining high findings are in the dev-only lint toolchain and have no non-breaking fix.
 
 ## Context files
