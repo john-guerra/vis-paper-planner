@@ -1,27 +1,12 @@
 @import 'tailwindcss';
 @import './theme.css';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Tokens come from DESIGN.md via theme.css. The design is light only. */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-neutral);
+  color: var(--color-on-surface);
+  /* DESIGN.md tokens hold a single family; the fallback stack lives here. */
+  font-family: var(--font-body-md), Arial, sans-serif;
+  font-size: var(--text-body-md);
+  line-height: 1.5;
 }

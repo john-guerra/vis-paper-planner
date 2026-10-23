@@ -51,7 +51,7 @@ A light, utilitarian research tool in the style of the CHI 2025 Papers Explorer:
 
 ## Typography
 
-Helvetica (system sans) only. Page title {typography.headline-lg}, section headings {typography.headline-md}, text {typography.body-md}, dense card text {typography.label-md}.
+Helvetica (system sans) only. The token holds one family (the DESIGN.md format allows no stack), so `globals.css` adds the fallback: Helvetica, then Arial, then `sans-serif`. Page title {typography.headline-lg}, section headings {typography.headline-md}, text {typography.body-md}, dense card text {typography.label-md}.
 
 ## Layout
 

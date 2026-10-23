@@ -1,65 +1,113 @@
-import Image from 'next/image';
+import { SearchInputError, searchPapers, type PaperSummary } from '@/lib/papers';
+import { getServerClient } from '@/lib/supabase';
+import SearchForm from './search-form';
 
-export default function Home() {
+type Outcome =
+  | { kind: 'idle' }
+  | { kind: 'results'; papers: PaperSummary[] }
+  | { kind: 'invalid'; message: string }
+  | { kind: 'unavailable' };
+
+async function runSearch(q: string): Promise<Outcome> {
+  if (!q.trim()) return { kind: 'idle' };
+  try {
+    return { kind: 'results', papers: await searchPapers(getServerClient(), q) };
+  } catch (error) {
+    if (error instanceof SearchInputError) return { kind: 'invalid', message: error.message };
+    console.error('Search failed:', error instanceof Error ? error.message : error);
+    return { kind: 'unavailable' };
+  }
+}
+
+function PaperCard({ paper }: { paper: PaperSummary }) {
+  const meta = [paper.year, paper.conference].filter(Boolean).join(' · ');
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl leading-10 font-semibold tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{' '}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{' '}
-            or the{' '}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{' '}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="bg-foreground text-background flex h-12 w-full items-center justify-center gap-2 rounded-full px-5 transition-colors hover:bg-[#383838] md:w-[158px] dark:hover:bg-[#ccc]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
+    <li className="bg-neutral p-sm text-label-md text-on-surface">
+      <h3 className="text-body-md leading-snug font-semibold">
+        {paper.doi ? (
+          <a href={`https://doi.org/${paper.doi}`} className="text-primary underline">
+            {paper.title}
           </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] md:w-[158px] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        ) : (
+          paper.title
+        )}
+      </h3>
+      <p className="mt-xs text-secondary">{meta}</p>
+      {paper.authors && (
+        <p className="mt-xs text-secondary italic">{paper.authors.split(';').join(', ')}</p>
+      )}
+      {paper.abstractSnippet && <p className="mt-sm leading-normal">{paper.abstractSnippet}</p>}
+    </li>
+  );
+}
+
+function Results({ q, outcome }: { q: string; outcome: Outcome }) {
+  switch (outcome.kind) {
+    case 'idle':
+      return (
+        <p className="text-secondary">
+          Type a topic, such as <em>treemap</em>, to find related visualization papers.
+        </p>
+      );
+    case 'invalid':
+      return (
+        <p role="alert" className="text-error">
+          {outcome.message}
+        </p>
+      );
+    case 'unavailable':
+      return (
+        <p role="alert" className="text-error">
+          Search is unavailable
+        </p>
+      );
+    case 'results':
+      if (outcome.papers.length === 0) {
+        return <p className="text-secondary">No papers match “{q}”.</p>;
+      }
+      return (
+        <>
+          <h2 className="text-headline-md font-semibold">
+            {outcome.papers.length} {outcome.papers.length === 1 ? 'paper' : 'papers'} for “{q}”
+          </h2>
+          <ul
+            aria-label="Search results"
+            className="mt-md gap-md grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
           >
-            Documentation
-          </a>
-        </div>
+            {outcome.papers.map((paper) => (
+              <PaperCard key={paper.id} paper={paper} />
+            ))}
+          </ul>
+        </>
+      );
+  }
+}
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string | string[] }>;
+}) {
+  const { q: raw } = await searchParams;
+  const q = (Array.isArray(raw) ? raw[0] : raw) ?? '';
+  const outcome = await runSearch(q);
+
+  return (
+    <>
+      <nav className="bg-surface p-md text-on-surface">
+        <span className="text-headline-md">VisPaperPlanner</span>
+      </nav>
+      <main className="px-md py-lg">
+        <h1 className="text-headline-lg leading-tight font-bold">Find related work</h1>
+        <p className="mt-sm mb-md max-w-3xl">
+          Search IEEE VIS papers (VisPubData) by keyword in the title, abstract and author keywords.
+          Most-cited papers come first.
+        </p>
+        <SearchForm initialQuery={q} />
+        <section aria-live="polite" className="mt-lg">
+          <Results q={q} outcome={outcome} />
+        </section>
       </main>
-    </div>
+    </>
   );
 }
