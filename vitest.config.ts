@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { existsSync } from 'node:fs';
 import path from 'path';
+
+// Integration tests read the local Supabase URL and keys from .env.local when it exists.
+// Without them (as in the CI unit job) the database tests are skipped.
+if (existsSync('.env.local')) process.loadEnvFile('.env.local');
 
 export default defineConfig({
   plugins: [react()],
