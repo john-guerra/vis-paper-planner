@@ -1,8 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VisPaperPlanner
+
+Keyword search over IEEE VIS papers (VisPubData), built with Next.js and Supabase. See the [PRD](docs/prd.md) for the planned scenarios.
 
 ## Run locally
 
-Needs a current Node LTS and Docker (for the local Supabase).
+Needs Node 22 (see `.nvmrc`) and Docker (for the local Supabase).
 
 ```bash
 npm ci

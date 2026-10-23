@@ -19,7 +19,7 @@ Users can search papers by keyword (issue #1, narrowed to keyword search), and e
 | Issue | Title                                     | Estimate | Owner     |
 | ----- | ----------------------------------------- | -------- | --------- |
 | #1    | Home / Search View (keyword search only)  | M        | Partner A |
-| --    | CI: lint, unit tests and E2E on each push | S        | Partner B |
+| #8    | CI: lint, unit tests and E2E on each push | S        | Partner B |
 
 ## Not in this sprint
 
