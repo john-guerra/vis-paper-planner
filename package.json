@@ -27,6 +27,8 @@
     ]
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "csv-parse": "^7.0.3",
     "next": "^16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -50,6 +52,7 @@
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^4.0.18"
   }
